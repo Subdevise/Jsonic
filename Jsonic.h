@@ -102,7 +102,8 @@ namespace Jsonic
 		{
 			type	= a.type;
 			len		= a.len;
-			str		= a.str;
+			// Copy largest union member
+			num		= a.num;
 			a.len	= 0;
 			a.str	= nullptr;
 			return *this;
@@ -251,6 +252,31 @@ namespace Jsonic
 			return Value(num);
 		}
 
+		//
+		// Returns the value of the named member. Will not recursively search.
+		//
+		Value GetValue(char const* sz,size_t szLen=0) const
+		{
+			if( szLen==0 )	szLen	= strlen(sz);
+			for( size_t i=0; i<members.size(); ++i )
+			{
+				Member const& m	= members[i];
+				if( m.type==KEY )
+				{
+					Value v	= m.GetValue();
+					if( szLen==v.len && szLen>0 && strncmp(v.AsString(),sz,szLen)==0 )
+					{
+						return (i<members.size()-1)? members[i+1].GetValue() : Value(ValueNull);
+					}
+				}
+			}
+			return Value(ValueNull);
+		}
+
+
+		//
+		// Searches keys recursively to find the specified member
+		//
 		Member const* Find(char const* sz,size_t szLen=0) const
 		{
 			if( szLen==0 )	szLen	= strlen(sz);
